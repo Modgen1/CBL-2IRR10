@@ -6,7 +6,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.qos import QoSProfile
 from sensor_msgs.msg import LaserScan
-import tf_transformations
+import transforms3d
 
 
 class CoordinateNavigation(Node):
@@ -102,9 +102,8 @@ class CoordinateNavigation(Node):
     #so this function converts it
     def euler_from_quaternion(self, q):
         # Convert quaternion to euler (roll, pitch, yaw)
-        import tf_transformations
-        orientation_list = [q.x, q.y, q.z, q.w]
-        (roll, pitch, yaw) = tf_transformations.euler_from_quaternion(orientation_list)
+        orientation_list = [q.w, q.x, q.y, q.z]
+        (roll, pitch, yaw) = transforms3d.euler.euler2quat(orientation_list)
         return roll, pitch, yaw
 
 
