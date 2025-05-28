@@ -17,10 +17,10 @@ class CoordinateNavigation(Node):
         self.has_scan_received = False
 
         # distance robot travels before attempting to re-orient towards goal
-        self.travel_distance = 0.25
+        self.travel_distance = 0.1
 
         #Acceptable obstacle distance = 0.3m
-        self.stop_distance = 0.3
+        self.stop_distance = 0.15
 
         qos = QoSProfile(depth=10)
 
