@@ -103,7 +103,7 @@ class CoordinateNavigation(Node):
     def euler_from_quaternion(self, q):
         # Convert quaternion to euler (roll, pitch, yaw)
         orientation_list = [q.w, q.x, q.y, q.z]
-        (roll, pitch, yaw) = transforms3d.euler.euler2quat(orientation_list)
+        (roll, pitch, yaw) = transforms3d.euler.quat2euler(orientation_list)
         return roll, pitch, yaw
 
 
