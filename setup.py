@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
 	'vel_publisher = CmdPublisher.vel_publisher:main',
     'publish_subscribe = CmdPublisher.publish_subscribe:main',
+    'coordinate_navigation = CmdPublisher.coordinate_navigation:main'
         
         ],
     },
