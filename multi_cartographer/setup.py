@@ -13,6 +13,7 @@ setup(
 	('share/' + package_name + '/launch', ['./launch/robot.launch.py']),
         ('share/' + package_name + '/launch', ['./launch/robot2.launch.py']),
         ('share/' + package_name + '/launch', ['./launch/all-robots.launch.py']),
+	('share/' + package_name + '/launch', ['./launch/launchmany.py']),
 	('share/' + package_name + '/config', ['./config/turtlebot3_lds_2d.lua']),
         ('share/' + package_name + '/config', ['./config/turtlebot3_lds_2d_r2.lua']),
     ],
