@@ -65,6 +65,14 @@ def launch_setup(context, *args, **kwargs):
         # URDF file for TurtleBot3 Burger
         urdf_file = os.path.join(pkg_turtlebot3_description, 'urdf', 'turtlebot3_burger.urdf')
 
+        # <--- INPUT: Custom Nav2 parameters for each robot.
+        # You might want to make these unique per robot.
+        # E.g., `os.path.join(get_package_share_directory('YOUR_ROBOT_CUSTOM_CONFIG_PKG'), 'params', f'nav2_params_{robot_name}.yaml')`
+        # For this example, we'll use a generic one and rely on namespace remapping for topics.
+        nav2_params_file = os.path.join(pkg_nav2_bringup, 'params', 'nav2_params.yaml') # Default Nav2 parameters
+        # If you have robot-specific nav2_params files, specify them here:
+        # nav2_params_file = os.path.join(get_package_share_directory('my_robot_config_pkg'), 'params', f'nav2_params_{robot_name}.yaml')
+
         # Push ROS namespace for each robot
         robot_group = GroupAction([
             PushRosNamespace(robot_namespace),
@@ -104,14 +112,6 @@ def launch_setup(context, *args, **kwargs):
             # Example: nav2_params_tb3_0.yaml, nav2_params_tb3_1.yaml etc.
             # Make sure these are in a 'params' directory within your custom package share.
             # For simplicity, using a generic one here.
-
-            # <--- INPUT: Custom Nav2 parameters for each robot.
-            # You might want to make these unique per robot.
-            # E.g., `os.path.join(get_package_share_directory('YOUR_ROBOT_CUSTOM_CONFIG_PKG'), 'params', f'nav2_params_{robot_name}.yaml')`
-            # For this example, we'll use a generic one and rely on namespace remapping for topics.
-            nav2_params_file = os.path.join(pkg_nav2_bringup, 'params', 'nav2_params.yaml') # Default Nav2 parameters
-            # If you have robot-specific nav2_params files, specify them here:
-            # nav2_params_file = os.path.join(get_package_share_directory('my_robot_config_pkg'), 'params', f'nav2_params_{robot_name}.yaml')
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')),
