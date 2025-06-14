@@ -11,25 +11,37 @@ class CoordinateCommunicator:
     APIBASE = "https://modgen.nl/api/"
 
     # bool isDelivering
+    # bool fetchedDelivery
     # tuple (int, int) pickup
     # tuple (int, int) dropoff
     # int deliveryID
-    __coordinates = {1: {}, 2: {}, 3: {}}
+    __coordinates = {}
 
-    def get_coordinates(self, robotID: int, x: int, y: int) -> tuple[int, int]:
+    def get_coordinates(self, robotID: str, x: int, y: int) -> tuple[int, int]:
         """
         Gets the coordinates the robot should move to. If there is no current delivery,
-        the robot first fetches one.
+        the robot first fetches one. If the API fetch fails, returns the current coordinates.
 
         :param robotID: The robot ID.
         :param x: The current x coordinate.
         :param y: The current y coordinate.
-        :returns: A tuple containing the x and y coordinates to move to.
+        :returns: A tuple containing the x and y coordinates to move to, or current location when fetch fails or no delivery is available.
+        :rtype: tuple[int, int]
         """
 
-        data = self.__coordinates[robotID]
+        try:
+            data = self.__coordinates[robotID]
+        except KeyError:
+            # Add robot id to coordinates dict
+            self.__coordinates[robotID] = {}
+            data = self.__coordinates[robotID]
 
-        if data.get("isDelivering", False):
+        # Complete delivery after robot requests new coordinates after already having fetched delivery coordinates
+        if data.get("fetchedDelivery", False):
+            # Indicate completion of delivery and get next pickup afterwards
+            self.complete_delivery(robotID, data["deliveryID"])
+        elif data.get("isDelivering", False):
+            self.__coordinates[robotID]["fetchedDelivery"] = True
             return data["dropoff"]
 
         pickup: tuple[int, int] | None = data.get("pickup", None)
@@ -46,7 +58,7 @@ class CoordinateCommunicator:
 
         return pickup
 
-    def __get_pickup(self, robotID: int, x: int, y: int) -> tuple[int, int]:
+    def __get_pickup(self, robotID: str, x: int, y: int) -> tuple[int, int]:
         """
         Gets a pickup from the API.
 
@@ -55,6 +67,7 @@ class CoordinateCommunicator:
         :param y: Robot's current y-coordinate
         :return: Tuple containing the x and y coordinates of the pickup, or the current robot location if there was no suitable pickup
         :rtype: tuple[int, int]
+        :raises HTTPException: If the API call to take the delivery fails
         """
         selected = self.__select_pickup(x, y)
 
@@ -64,7 +77,7 @@ class CoordinateCommunicator:
 
         # Send taken request to api
         r = requests.post(self.APIBASE + "take", params={"req_id": selected["id"]})
-        if r.status_code != 200:
+        if r.status_code != 200 or r.json()["taken_id"] is None:
              raise HTTPException("Unable to take delivery!")
 
         print(f"Robot {robotID} has taken delivery {selected['id']}")
@@ -73,7 +86,7 @@ class CoordinateCommunicator:
 
         return selected["pick_up_x"], selected["pick_up_y"]
 
-    def __update_data(self, robotID: int, data: dict):
+    def __update_data(self, robotID: str, data: dict):
         self.__coordinates[robotID]["isDelivering"] = True
         self.__coordinates[robotID]["pickup"] = (data["pick_up_x"], data["pick_up_y"])
         self.__coordinates[robotID]["dropoff"] = (data["drop_off_x"], data["drop_off_y"])
@@ -93,7 +106,7 @@ class CoordinateCommunicator:
         r = requests.get(self.APIBASE + "list")
 
         if r.status_code != 200:
-            raise HTTPException()
+            raise HTTPException("Failed to fetch available pickups from API!")
 
         available = r.json()
 
@@ -121,12 +134,14 @@ class CoordinateCommunicator:
 
         return selected
 
-    def complete_delivery(self, robotID: int, deliveryID: int) -> None:
+    def complete_delivery(self, robotID: str, deliveryID: int) -> None:
         """
         Completes a delivery.
 
         :param robotID: ID of the robot completing the delivery.
         :param deliveryID: ID of the delivery to complete.
+        :raises KeyError: If the delivery is not found in the API.
+        :raises HTTPException: If the API call to remove the delivery fails.
         """
         r = requests.post(self.APIBASE + "remove", params={"del_id": deliveryID})
 
@@ -141,6 +156,9 @@ class CoordinateCommunicator:
         self.__coordinates[robotID]["pickup"] = None
         self.__coordinates[robotID]["dropoff"] = None
         self.__coordinates[robotID]["deliveryID"] = None
+        self.__coordinates[robotID]["fetchedDelivery"] = False
 
-    def get_delivery_id(self, robotID: int) -> int | None:
+        print(f"Robot {robotID} has completed delivery {deliveryID}")
+
+    def get_delivery_id(self, robotID: str) -> int | None:
         return self.__coordinates[robotID].get("deliveryID", None)
